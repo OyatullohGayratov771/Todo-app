@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"todo-app/config"
+	"api-gateway/config"
 )
 
 func main() {
