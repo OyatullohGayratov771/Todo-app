@@ -4,13 +4,19 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"user-service/protos/user/userpb"
+	"fmt"
+	"user-service/internal/utils"
+	userpb "user-service/protos/user"
 
 	"github.com/lib/pq"
 )
 
 type Storage interface {
-	InsertUser(ctx context.Context, req *userpb.RegisterUserRequest) (int, error)
+	InsertUser(ctx context.Context, req *userpb.RegisterUserReq) (int, error)
+	LoginSql(ctx context.Context, req *userpb.LoginUserReq) (int, error)
+	UpdateUserName(ctx context.Context, userID, newUserName string) error
+	UpdatePassword(ctx context.Context, userID, oldPassword, newPassword string) error
+	UpdateEmail(ctx context.Context, userID, newEmail string) error
 }
 
 type PostgresStorage struct {
@@ -23,7 +29,7 @@ func NewPostgresStorage(db *sql.DB) *PostgresStorage {
 	}
 }
 
-func (s *PostgresStorage) InsertUser(ctx context.Context, req *userpb.RegisterUserRequest) (int, error) {
+func (s *PostgresStorage) InsertUser(ctx context.Context, req *userpb.RegisterUserReq) (int, error) {
 	var userID int
 	err := s.db.QueryRowContext(ctx, "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id", req.Username, req.Email, req.Password).Scan(&userID)
 	if err != nil {
@@ -35,4 +41,70 @@ func (s *PostgresStorage) InsertUser(ctx context.Context, req *userpb.RegisterUs
 		return 0, err
 	}
 	return userID, nil
+}
+
+func (s *PostgresStorage) LoginSql(ctx context.Context, req *userpb.LoginUserReq) (int, error) {
+	var storedPassword string
+	var userID int
+	err := s.db.QueryRowContext(ctx, "SELECT password,id FROM users WHERE username = $1", req.Username).Scan(&storedPassword, &userID)
+	if err != nil {
+		return 0, errors.New("invalid username")
+	}
+
+	check := utils.CheckPasswordHash(req.Password, storedPassword)
+
+	if !check {
+		return 0, errors.New("invalid password")
+	}
+	return userID, nil
+}
+
+func (s *PostgresStorage) UpdateUserName(ctx context.Context, userID, newUserName string) error {
+	var currentUsername string
+	err := s.db.QueryRow("SELECT username FROM users WHERE id = $1", userID).Scan(&currentUsername)
+	if err != nil {
+		return err
+	}
+
+	if currentUsername == newUserName {
+		return fmt.Errorf("you used this name recently. please choose different one.")
+	}
+
+	_, err = s.db.Exec("UPDATE users SET username = $1 WHERE id = $2", newUserName, userID)
+	return err
+}
+
+func (s *PostgresStorage) UpdatePassword(ctx context.Context, userID, oldPassword, newPassword string) error {
+	var currentPassword string
+	err := s.db.QueryRow("SELECT password FROM users WHERE id = $1", userID).Scan(&currentPassword)
+	if err != nil {
+		return err
+	}
+	check := utils.CheckPasswordHash(oldPassword, currentPassword)
+	if !check {
+		return fmt.Errorf("The old password was entered incorrectly.")
+	}
+	check = utils.CheckPasswordHash(newPassword, currentPassword)
+	if check {
+		return fmt.Errorf("you used this password recently. please choose different one.")
+	}
+	hashnewpassword, err := utils.HashPassword(newPassword)
+
+	_, err = s.db.Exec("UPDATE users SET password = $1 WHERE id = $2", hashnewpassword, userID)
+	return err
+}
+
+func (s *PostgresStorage) UpdateEmail(ctx context.Context, userID, newEmail string) error {
+	var currentEmail string
+	err := s.db.QueryRow("SELECT email FROM users WHERE id = $1", userID).Scan(&currentEmail)
+	if err != nil {
+		return err
+	}
+
+	if currentEmail == newEmail {
+		return fmt.Errorf("you used this email recently. please choose different one.")
+	}
+
+	_, err = s.db.Exec("UPDATE users SET email = $1 WHERE id = $2", newEmail, userID)
+	return err
 }

@@ -6,13 +6,17 @@ import (
 	"net"
 	"user-service/config"
 	"user-service/internal/service"
+	"user-service/internal/utils"
 
 	db "user-service/internal/storage"
 
-	pb "user-service/protos/user/userpb"
+	pb "user-service/protos/user"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 )
 
 func main() {
@@ -20,20 +24,20 @@ func main() {
 	config.LoadConfig()
 
 	// Connecting to PostgreSQL
-	ConnectToDB,err := db.ConnectToDB(config.AppConfig)
+	dbConn, err := db.ConnectToDB(config.AppConfig)
 	if err != nil {
 		log.Fatalf("Failed to connect to the database: %v", err)
 	}
 
 	// Launching the Storage Layer
-	postgres := db.NewPostgresStorage(ConnectToDB)
+	dbPostgres := db.NewPostgresStorage(dbConn)
 
 	// Opening a TCP listener for the gRPC server
 	lis, err := net.Listen("tcp", config.AppConfig.Http.Host+":"+config.AppConfig.Http.Port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	// Creating a gRPC server and adding an interceptor 
+	// Creating a gRPC server and adding an interceptor
 	grpcServer := grpc.NewServer(
 		grpc.UnaryInterceptor(grpcInterceptor),
 	)
@@ -41,10 +45,10 @@ func main() {
 	reflection.Register(grpcServer)
 
 	// Registering a UserService server
-	pb.RegisterUserServiceServer(grpcServer, service.NewUserService(postgres))
+	pb.RegisterUserServiceServer(grpcServer, service.NewUserService(dbPostgres))
 
 	// Starting the server
-	log.Println("User service running on port ", config.AppConfig.Http.Port)
+	log.Printf("User service running on %s:%s", config.AppConfig.Http.Host, config.AppConfig.Http.Port)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
@@ -57,10 +61,29 @@ func grpcInterceptor(
 	info *grpc.UnaryServerInfo,
 	handler grpc.UnaryHandler,
 ) (interface{}, error) {
-	m, err := handler(ctx, req)
-	if err != nil {
-		log.Printf("RPC failed with error: %v", err)
-		return nil, err
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return handler(ctx, req) // Token bo‘lmasa ham davom etsin (Register/Login uchun)
 	}
-	return m, nil
+
+	// Authorization sarlavhasidan tokenni olish
+	authHeaders := md["authorization"]
+	if len(authHeaders) > 0 {
+		tokenStr := authHeaders[0]
+		if len(tokenStr) > 7 && tokenStr[:7] == "Bearer " {
+			tokenStr = tokenStr[7:] // Tokenni olib tashlaymiz, faqat haqiqiy tokenni qoldiramiz
+		}
+
+		// Tokenni tekshirish
+		userID, err := utils.ValidateJWT(tokenStr)
+		if err != nil {
+			log.Printf("Invalid token: %v", err)
+			return nil, status.Error(codes.Unauthenticated, "invalid token")
+		}
+
+		// Contextga userID ni qo‘shamiz
+		ctx = context.WithValue(ctx, "userID", userID)
+	}
+
+	return handler(ctx, req)
 }

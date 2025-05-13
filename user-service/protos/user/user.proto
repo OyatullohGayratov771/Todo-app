@@ -3,47 +3,46 @@ syntax = "proto3";
 option go_package = "./userpb";
 
 service UserService {
-  rpc Register(RegisterUserRequest) returns (RegisterUserResponse);
-  rpc Login(LoginUserRequest) returns (LoginUserResponse);
-  rpc CheckUserID (CheckUserIDRequest) returns (checkUserIDResponse);
-  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  rpc Register(RegisterUserReq) returns (RegisterUserRes);
+  rpc Login(LoginUserReq) returns (LoginUserRes);
+  rpc UpdateUserName(UpdateUserNameReq) returns (UpdateRes);
+  rpc UpdatePassword(UpdatePasswordReq) returns (UpdateRes);
+  rpc UpdateEmail(UpdateEmailReq) returns (UpdateRes);
 }
 
-message GetUserRequest {
-  string userID = 1;
-}
-
-message GetUserResponse {
-  string userID = 1;
-  string username = 2;
-  string email = 3;
-}
-message CheckUserIDRequest {
-  string id = 1;
-}
-
-message checkUserIDResponse {
-  bool valid = 1;
-}
-
-message RegisterUserRequest {
+message RegisterUserReq {
   string username = 1;
   string password = 2;
   string email = 3;
 }
 
-message RegisterUserResponse {
-  string userID = 1;
-  string username = 2;
-  string email = 3;
+message RegisterUserRes {
+  string message = 1;
+  string token = 2;
 }
 
-message LoginUserRequest {
+message LoginUserReq {
   string username = 1;
   string password = 2;
 }
 
-message LoginUserResponse {
+message LoginUserRes {
   string token = 1;
-  int32 expiresIn = 2;
+}
+
+message UpdateUserNameReq {
+  string newusername = 1;
+}
+
+message UpdatePasswordReq {
+  string newpassword = 1;
+  string oldpassword = 2;
+}
+
+message UpdateEmailReq {
+  string newemail = 1;
+}
+
+message UpdateRes {
+  string message = 1;
 }
