@@ -1,10 +1,10 @@
-gen-user:
+gen-task:
 	@protoc \
 	--go_out=. \
 	--go-grpc_out=. \
 	--go_opt=paths=source_relative \
 	--go-grpc_opt=paths=source_relative \
-	./protos/user/user.proto
+	./protos/task/task.proto
 
 
 run:
