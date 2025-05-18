@@ -12,6 +12,14 @@ type Config struct {
 		Host string
 		Port string
 	}
+	UserService struct {
+		Host string
+		Port string
+	}
+	TaskService struct {
+		Host string
+		Port string
+	}
 
 	Database struct {
 		Host     string
@@ -36,6 +44,20 @@ func LoadConfig() {
 		}{
 			Host: os.Getenv("HTTP_HOST"),
 			Port: os.Getenv("HTTP_PORT"),
+		},
+		UserService: struct {
+			Host string
+			Port string
+		}{
+			Host: os.Getenv("USER_SERVICE_HOST"),
+			Port: os.Getenv("USER_SERVICE_PORT"),
+		},
+		TaskService: struct {
+			Host string
+			Port string
+		}{
+			Host: os.Getenv("TASK_SERVICE_HOST"),
+			Port: os.Getenv("TASK_SERVICE_PORT"),
 		},
 		Database: struct {
 			Host     string

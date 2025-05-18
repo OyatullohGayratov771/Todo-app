@@ -22,20 +22,30 @@ func NewUserService(s *storage.PostgresStorage) *UserService {
 }
 
 func (s *UserService) Register(ctx context.Context, req *userpb.RegisterUserReq) (*userpb.RegisterUserRes, error) {
-	// hashing password
+	if req.Username == "" {
+		return nil, status.Error(codes.InvalidArgument, "username cannot be empty")
+	}
+	if req.Email == "" {
+		return nil, status.Error(codes.InvalidArgument, "email cannot be empty")
+	}
+	if req.Password == "" {
+		return nil, status.Error(codes.InvalidArgument, "password cannot be empty")
+	}
+
 	hashpassword, err := utils.HashPassword(req.Password)
 	if err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.Internal, "failed to hash password: %v", err)
 	}
 	req.Password = hashpassword
 
 	id, err := s.storage.InsertUser(ctx, req)
 	if err != nil {
-		return &userpb.RegisterUserRes{}, err
+		return nil, err
 	}
+
 	t, err := utils.GenerateJWT(fmt.Sprintf("%d", id))
 	if err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.Internal, "failed to generate token: %v", err)
 	}
 
 	return &userpb.RegisterUserRes{
@@ -47,9 +57,6 @@ func (s *UserService) Register(ctx context.Context, req *userpb.RegisterUserReq)
 func (s *UserService) Login(ctx context.Context, req *userpb.LoginUserReq) (*userpb.LoginUserRes, error) {
 	userID, err := s.storage.LoginSql(ctx, req)
 	if err != nil {
-		return nil, err
-	}
-	if userID == 0 {
 		return nil, err
 	}
 
@@ -65,7 +72,7 @@ func (s *UserService) Login(ctx context.Context, req *userpb.LoginUserReq) (*use
 
 func (s *UserService) UpdateUserName(ctx context.Context, req *userpb.UpdateUserNameReq) (*userpb.UpdateRes, error) {
 	if req.Newusername == "" {
-		return &userpb.UpdateRes{Message: "username cannot be empty"}, nil
+		return &userpb.UpdateRes{Message: "enter new username"}, status.Error(codes.InvalidArgument, "username cannot be empty")
 	}
 	userID, ok := ctx.Value("userID").(string)
 	if !ok {
@@ -76,12 +83,13 @@ func (s *UserService) UpdateUserName(ctx context.Context, req *userpb.UpdateUser
 	if err != nil {
 		return &userpb.UpdateRes{Message: "failed update"}, err
 	}
+
 	return &userpb.UpdateRes{Message: "update user name successful"}, nil
 }
 
 func (s *UserService) UpdatePassword(ctx context.Context, req *userpb.UpdatePasswordReq) (*userpb.UpdateRes, error) {
 	if req.Newpassword == "" {
-		return &userpb.UpdateRes{Message: "enter new password"}, nil
+		return &userpb.UpdateRes{Message: "enter new password"}, status.Errorf(codes.InvalidArgument, "password cannot be empty")
 	}
 
 	userID, ok := ctx.Value("userID").(string)
@@ -99,7 +107,7 @@ func (s *UserService) UpdatePassword(ctx context.Context, req *userpb.UpdatePass
 
 func (s *UserService) UpdateEmail(ctx context.Context, req *userpb.UpdateEmailReq) (*userpb.UpdateRes, error) {
 	if req.Newemail == "" {
-		return &userpb.UpdateRes{Message: "The email field is required."}, nil
+		return &userpb.UpdateRes{Message: "The email field is required."}, status.Errorf(codes.InvalidArgument, "email cannot be empty")
 	}
 
 	userID, ok := ctx.Value("userID").(string)

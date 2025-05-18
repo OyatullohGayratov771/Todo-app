@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+option go_package = "./userpb";
+
+service UserService {
+  rpc Register(RegisterUserReq) returns (RegisterUserRes);
+  rpc Login(LoginUserReq) returns (LoginUserRes);
+  rpc UpdateUserName(UpdateUserNameReq) returns (UpdateRes);
+  rpc UpdatePassword(UpdatePasswordReq) returns (UpdateRes);
+  rpc UpdateEmail(UpdateEmailReq) returns (UpdateRes);
+}
+
+message RegisterUserReq {
+  string username = 1;
+  string password = 2;
+  string email = 3;
+}
+
+message RegisterUserRes {
+  string message = 1;
+  string token = 2;
+}
+
+message LoginUserReq {
+  string username = 1;
+  string password = 2;
+}
+
+message LoginUserRes {
+  string token = 1;
+}
+
+message UpdateUserNameReq {
+  string newusername = 1;
+}
+
+message UpdatePasswordReq {
+  string newpassword = 1;
+  string oldpassword = 2;
+}
+
+message UpdateEmailReq {
+  string newemail = 1;
+}
+
+message UpdateRes {
+  string message = 1;
+}

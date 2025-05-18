@@ -4,11 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"user-service/internal/utils"
 	userpb "user-service/protos/user"
 
 	"github.com/lib/pq"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type Storage interface {
@@ -46,16 +47,17 @@ func (s *PostgresStorage) InsertUser(ctx context.Context, req *userpb.RegisterUs
 func (s *PostgresStorage) LoginSql(ctx context.Context, req *userpb.LoginUserReq) (int, error) {
 	var storedPassword string
 	var userID int
-	err := s.db.QueryRowContext(ctx, "SELECT password,id FROM users WHERE username = $1", req.Username).Scan(&storedPassword, &userID)
+
+	err := s.db.QueryRowContext(ctx, "SELECT password,id FROM users WHERE username = $1", req.Username).
+		Scan(&storedPassword, &userID)
 	if err != nil {
-		return 0, errors.New("invalid username")
+		return 0, status.Error(codes.NotFound, "user not found")
 	}
 
-	check := utils.CheckPasswordHash(req.Password, storedPassword)
-
-	if !check {
-		return 0, errors.New("invalid password")
+	if !utils.CheckPasswordHash(req.Password, storedPassword) {
+		return 0, status.Error(codes.Unauthenticated, "invalid password")
 	}
+
 	return userID, nil
 }
 
@@ -67,7 +69,7 @@ func (s *PostgresStorage) UpdateUserName(ctx context.Context, userID, newUserNam
 	}
 
 	if currentUsername == newUserName {
-		return fmt.Errorf("you used this name recently. please choose different one.")
+		return status.Error(codes.AlreadyExists, "username already exists")
 	}
 
 	_, err = s.db.Exec("UPDATE users SET username = $1 WHERE id = $2", newUserName, userID)
@@ -82,11 +84,11 @@ func (s *PostgresStorage) UpdatePassword(ctx context.Context, userID, oldPasswor
 	}
 	check := utils.CheckPasswordHash(oldPassword, currentPassword)
 	if !check {
-		return fmt.Errorf("The old password was entered incorrectly.")
+		return status.Errorf(codes.FailedPrecondition, "The old password was entered incorrectly.")
 	}
 	check = utils.CheckPasswordHash(newPassword, currentPassword)
 	if check {
-		return fmt.Errorf("you used this password recently. please choose different one.")
+		return status.Errorf(codes.FailedPrecondition, "The new password cannot be the same as the old one.")
 	}
 	hashnewpassword, err := utils.HashPassword(newPassword)
 
@@ -102,7 +104,7 @@ func (s *PostgresStorage) UpdateEmail(ctx context.Context, userID, newEmail stri
 	}
 
 	if currentEmail == newEmail {
-		return fmt.Errorf("you used this email recently. please choose different one.")
+		return status.Error(codes.AlreadyExists, "email already exists")
 	}
 
 	_, err = s.db.Exec("UPDATE users SET email = $1 WHERE id = $2", newEmail, userID)
