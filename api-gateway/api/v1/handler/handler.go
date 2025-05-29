@@ -8,11 +8,11 @@ type Handler struct {
 	service    service.IClients
 }
 
-type HandlerCinfig struct {
+type HandlerConfig struct {
 	Service service.IClients
 }
 
-func NewHandler(h *HandlerCinfig) *Handler {
+func NewHandler(h *HandlerConfig) *Handler {
 	return &Handler{
 		service: h.Service,
 	}

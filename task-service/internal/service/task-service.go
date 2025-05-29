@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"task-service/internal/storage"
 	taskpb "task-service/protos/task"
@@ -45,6 +47,9 @@ func (s *UserService) GetTask(ctx context.Context, req *taskpb.GetTaskRequest) (
 	}
 	task, err := s.storage.GetTask(req.Id, userID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, status.Errorf(codes.NotFound, "task not found")
+		}
 		return nil, status.Errorf(codes.Internal, "failed to get task: %v", err)
 	}
 	return task, nil
@@ -83,7 +88,7 @@ func (s *UserService) DeleteTask(ctx context.Context, req *taskpb.DeleteTaskRequ
 	}
 	res, err := s.storage.DeleteTask(req.Id, userID)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to delete task: %v", err)
+		return nil, err
 	}
 	return res, nil
 }

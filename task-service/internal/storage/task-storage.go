@@ -7,6 +7,9 @@ import (
 	"strconv"
 
 	taskpb "task-service/protos/task"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type Storage interface {
@@ -160,16 +163,16 @@ func (p *PostgresStorage) DeleteTask(id, userID string) (*taskpb.DeleteTaskRespo
 	`, id, userID)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to delete task: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to delete task: %v", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return nil, fmt.Errorf("failed to check rows affected: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to check rows affected: %v", err)
 	}
 
 	if rowsAffected == 0 {
-		return nil, fmt.Errorf("no task deleted")
+		return nil, status.Errorf(codes.NotFound, "task not found")
 	}
 
 	return &taskpb.DeleteTaskResponse{

@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"user-service/internal/utils"
 	userpb "user-service/protos/user"
 
@@ -36,7 +35,7 @@ func (s *PostgresStorage) InsertUser(ctx context.Context, req *userpb.RegisterUs
 	if err != nil {
 		if pgErr, ok := err.(*pq.Error); ok {
 			if pgErr.Code == "23505" {
-				return 0, errors.New("username already exists")
+				return 0, status.Error(codes.AlreadyExists, "username already exists")
 			}
 		}
 		return 0, err

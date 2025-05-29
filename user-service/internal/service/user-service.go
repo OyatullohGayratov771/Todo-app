@@ -97,7 +97,7 @@ func (s *UserService) UpdatePassword(ctx context.Context, req *userpb.UpdatePass
 		return nil, status.Errorf(codes.Unauthenticated, "user not authenticated")
 	}
 
-	err := s.storage.UpdatePassword(ctx, userID, req.Oldpassword, req.Newpassword)
+	err := s.storage.UpdatePassword(ctx, userID, req.Currentpassword, req.Newpassword)
 	if err != nil {
 		return &userpb.UpdateRes{Message: "error in storage"}, err
 	}

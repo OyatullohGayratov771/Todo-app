@@ -1,5 +1,46 @@
 basePath: /
 definitions:
+  models.TaskRequest:
+    properties:
+      description:
+        type: string
+      done:
+        type: boolean
+      title:
+        type: string
+    type: object
+  taskpb.CreateTaskRequest:
+    properties:
+      description:
+        type: string
+      title:
+        type: string
+    type: object
+  taskpb.CreateTaskResponse:
+    properties:
+      id:
+        type: string
+    type: object
+  taskpb.ListTasksResponse:
+    properties:
+      tasks:
+        items:
+          $ref: '#/definitions/taskpb.Task'
+        type: array
+    type: object
+  taskpb.Task:
+    properties:
+      description:
+        type: string
+      done:
+        type: boolean
+      id:
+        type: string
+      title:
+        type: string
+      user_id:
+        type: string
+    type: object
   userpb.LoginUserReq:
     properties:
       password:
@@ -23,9 +64,11 @@ definitions:
     type: object
   userpb.UpdatePasswordReq:
     properties:
-      newpassword:
+      confirmpassword:
         type: string
-      oldpassword:
+      currentpassword:
+        type: string
+      newpassword:
         type: string
     type: object
   userpb.UpdateUserNameReq:
@@ -40,6 +83,236 @@ info:
   title: TODO-APP
   version: "1.0"
 paths:
+  /task/create:
+    post:
+      consumes:
+      - application/json
+      description: Allows an authenticated user to create a new task
+      parameters:
+      - description: Task details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/taskpb.CreateTaskRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/taskpb.CreateTaskResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new task
+      tags:
+      - task
+  /task/delete/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Allows an authenticated user to delete a task by ID
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: delete a task
+      tags:
+      - task
+  /task/get/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Allows an authenticated user to retrieve a task by ID
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Retrieve a task
+      tags:
+      - task
+  /task/list:
+    get:
+      consumes:
+      - application/json
+      description: Allows an authenticated user to retrieve a list of tasks
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/taskpb.ListTasksResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Retrieve a list of tasks
+      tags:
+      - task
+  /task/update/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Allows an authenticated user to update a task by ID
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Task details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.TaskRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a task
+      tags:
+      - task
   /user/login:
     post:
       consumes:

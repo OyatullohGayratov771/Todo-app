@@ -35,8 +35,9 @@ message UpdateUserNameReq {
 }
 
 message UpdatePasswordReq {
-  string newpassword = 1;
-  string oldpassword = 2;
+  string currentpassword = 1;
+  string newpassword = 2;
+  string confirmpassword = 3;
 }
 
 message UpdateEmailReq {

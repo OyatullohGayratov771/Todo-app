@@ -10,7 +10,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-
 // RegisterUser godoc
 // @Summary      Register new user
 // @Description  Create a new user and return JWT token
@@ -32,12 +31,10 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 		})
 		return
 	}
-
 	res, err := h.service.User().Register(c, req)
 	if err != nil {
 		grpcCode := status.Code(err)
 		errMsg := status.Convert(err).Message()
-
 		switch grpcCode {
 		case codes.AlreadyExists:
 			c.JSON(409, gin.H{"error": errMsg})
@@ -56,7 +53,6 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 	})
 
 }
-
 
 // LoginUser godoc
 // @Summary      Login user
@@ -79,7 +75,7 @@ func (h *Handler) LoginUser(c *gin.Context) {
 		})
 		return
 	}
-
+	fmt.Println(req)
 	res, err := h.service.User().Login(c, req)
 	if err != nil {
 		grpcCode := status.Code(err)
@@ -122,7 +118,6 @@ func (h *Handler) LoginUser(c *gin.Context) {
 func (h *Handler) UpdateUserName(c *gin.Context) {
 	req := &userpb.UpdateUserNameReq{}
 
-	// JSON parsing va validatsiya
 	if err := c.ShouldBindJSON(req); err != nil {
 		c.JSON(400, gin.H{
 			"error": "Invalid request format: " + err.Error(),
@@ -130,18 +125,16 @@ func (h *Handler) UpdateUserName(c *gin.Context) {
 		return
 	}
 
-	// Tokenni olib, contextga joylash
 	ctx, err := utils.InjectTokenToContext(c.Request)
 	if err != nil {
 		c.JSON(401, gin.H{"error": "Unauthorized: invalid or missing token"})
 		return
 	}
 
-	// RPC chaqiruv
 	res, err := h.service.User().UpdateUserName(ctx, req)
 	if err != nil {
 		grpcCode := status.Code(err)
-		errMsg := status.Convert(err).Message() // gRPC error message
+		errMsg := status.Convert(err).Message()
 		switch grpcCode {
 		case codes.NotFound:
 			c.JSON(404, gin.H{"error": "User not found"})
@@ -157,7 +150,6 @@ func (h *Handler) UpdateUserName(c *gin.Context) {
 		return
 	}
 
-	// Muvaffaqiyatli javob
 	c.JSON(200, gin.H{
 		"message": res.Message,
 	})
@@ -180,7 +172,6 @@ func (h *Handler) UpdateUserName(c *gin.Context) {
 func (h *Handler) UpdatePassword(c *gin.Context) {
 	req := &userpb.UpdatePasswordReq{}
 
-	// JSON parsing va validatsiya
 	if err := c.ShouldBindJSON(req); err != nil {
 		c.JSON(400, gin.H{
 			"error": "Invalid request format: " + err.Error(),
@@ -188,18 +179,23 @@ func (h *Handler) UpdatePassword(c *gin.Context) {
 		return
 	}
 
-	// Tokenni olib, contextga joylash
+	if req.Newpassword != req.Confirmpassword {
+		c.JSON(400, gin.H{
+			"error": "New password and confirm password do not match",
+		})
+		return
+	}
+
 	ctx, err := utils.InjectTokenToContext(c.Request)
 	if err != nil {
 		c.JSON(401, gin.H{"error": "Unauthorized: invalid or missing token"})
 		return
 	}
 
-	// RPC chaqiruv
 	res, err := h.service.User().UpdatePassword(ctx, req)
 	if err != nil {
 		grpcCode := status.Code(err)
-		errMsg := status.Convert(err).Message() // gRPC error message
+		errMsg := status.Convert(err).Message()
 		switch grpcCode {
 		case codes.NotFound:
 			c.JSON(404, gin.H{"error": "User not found"})

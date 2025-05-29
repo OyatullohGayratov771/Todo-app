@@ -274,11 +274,12 @@ func (x *UpdateUserNameReq) GetNewusername() string {
 }
 
 type UpdatePasswordReq struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Newpassword   string                 `protobuf:"bytes,1,opt,name=newpassword,proto3" json:"newpassword,omitempty"`
-	Oldpassword   string                 `protobuf:"bytes,2,opt,name=oldpassword,proto3" json:"oldpassword,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Currentpassword string                 `protobuf:"bytes,1,opt,name=currentpassword,proto3" json:"currentpassword,omitempty"`
+	Newpassword     string                 `protobuf:"bytes,2,opt,name=newpassword,proto3" json:"newpassword,omitempty"`
+	Confirmpassword string                 `protobuf:"bytes,3,opt,name=confirmpassword,proto3" json:"confirmpassword,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *UpdatePasswordReq) Reset() {
@@ -311,6 +312,13 @@ func (*UpdatePasswordReq) Descriptor() ([]byte, []int) {
 	return file_protos_user_user_proto_rawDescGZIP(), []int{5}
 }
 
+func (x *UpdatePasswordReq) GetCurrentpassword() string {
+	if x != nil {
+		return x.Currentpassword
+	}
+	return ""
+}
+
 func (x *UpdatePasswordReq) GetNewpassword() string {
 	if x != nil {
 		return x.Newpassword
@@ -318,9 +326,9 @@ func (x *UpdatePasswordReq) GetNewpassword() string {
 	return ""
 }
 
-func (x *UpdatePasswordReq) GetOldpassword() string {
+func (x *UpdatePasswordReq) GetConfirmpassword() string {
 	if x != nil {
-		return x.Oldpassword
+		return x.Confirmpassword
 	}
 	return ""
 }
@@ -431,10 +439,11 @@ const file_protos_user_user_proto_rawDesc = "" +
 	"\fLoginUserRes\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\"5\n" +
 	"\x11UpdateUserNameReq\x12 \n" +
-	"\vnewusername\x18\x01 \x01(\tR\vnewusername\"W\n" +
-	"\x11UpdatePasswordReq\x12 \n" +
-	"\vnewpassword\x18\x01 \x01(\tR\vnewpassword\x12 \n" +
-	"\voldpassword\x18\x02 \x01(\tR\voldpassword\",\n" +
+	"\vnewusername\x18\x01 \x01(\tR\vnewusername\"\x89\x01\n" +
+	"\x11UpdatePasswordReq\x12(\n" +
+	"\x0fcurrentpassword\x18\x01 \x01(\tR\x0fcurrentpassword\x12 \n" +
+	"\vnewpassword\x18\x02 \x01(\tR\vnewpassword\x12(\n" +
+	"\x0fconfirmpassword\x18\x03 \x01(\tR\x0fconfirmpassword\",\n" +
 	"\x0eUpdateEmailReq\x12\x1a\n" +
 	"\bnewemail\x18\x01 \x01(\tR\bnewemail\"%\n" +
 	"\tUpdateRes\x12\x18\n" +
