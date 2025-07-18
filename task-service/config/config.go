@@ -28,6 +28,10 @@ func LoadConfig() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Failed to load .env file")
 	}
+	err := godotenv.Load()
+    if err != nil {
+        log.Println("Warning: No .env file found, relying on environment variables")
+    }
 
 	AppConfig = Config{
 		Http: struct {
@@ -51,4 +55,6 @@ func LoadConfig() {
 			Name:     os.Getenv("DB_NAME"),
 		},
 	}
+
+	log.Printf("Loaded config: %+v\n", AppConfig)
 }

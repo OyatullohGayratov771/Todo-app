@@ -6,6 +6,7 @@ import (
 	_ "api-gateway/docs"
 	"api-gateway/service"
 	"flag"
+	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -27,6 +28,7 @@ func main() {
 	config.LoadConfig()
 	cfg := config.AppConfig
 
+	log.Println(cfg.Http.Host + ":" + cfg.Http.Port)
 	addr := flag.String("addr", cfg.Http.Host+":"+cfg.Http.Port, "HTTP Server address")
 	logger := slog.New(slog.NewJSONHandler(os.Stdout,
 		&slog.HandlerOptions{
