@@ -20,6 +20,10 @@ type Config struct {
 		Password string
 		Name     string
 	}
+	Redis struct {
+		Host string
+		Port string
+	}
 }
 
 var AppConfig Config
@@ -29,9 +33,9 @@ func LoadConfig() {
 		log.Fatal("Failed to load .env file")
 	}
 	err := godotenv.Load()
-    if err != nil {
-        log.Println("Warning: No .env file found, relying on environment variables")
-    }
+	if err != nil {
+		log.Println("Warning: No .env file found, relying on environment variables")
+	}
 
 	AppConfig = Config{
 		Http: struct {
@@ -53,6 +57,13 @@ func LoadConfig() {
 			User:     os.Getenv("DB_USER"),
 			Password: os.Getenv("DB_PASSWORD"),
 			Name:     os.Getenv("DB_NAME"),
+		},
+		Redis: struct {
+			Host string
+			Port string
+		}{
+			Host: os.Getenv("REDIS_HOST"),
+			Port: os.Getenv("REDIS_PORT"),
 		},
 	}
 

@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option go_package = "./notifactionpb" ;
+
+service NotificationService {
+    rpc SendNotification (NotificationReq) returns (NotifactionRes);
+}
+
+message NotifactionRes{
+}
+
+message NotificationReq {
+    string userEmail = 1;
+    string subject = 2;
+    string message = 3;
+}

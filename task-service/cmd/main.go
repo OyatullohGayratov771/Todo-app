@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"task-service/config"
+	"task-service/internal/redis"
 	"task-service/internal/service"
 	"task-service/internal/utils"
 
@@ -32,6 +33,8 @@ func main() {
 	// Launching the Storage Layer
 	dbPostgres := db.NewPostgresStorage(dbConn)
 
+	r := redis.NewRedisClient(config.AppConfig)
+
 	// Opening a TCP listener for the gRPC server
 	lis, err := net.Listen("tcp", config.AppConfig.Http.Host+":"+config.AppConfig.Http.Port)
 	if err != nil {
@@ -45,10 +48,10 @@ func main() {
 	reflection.Register(grpcServer)
 
 	// Registering a UserService server
-	pb.RegisterTaskServiceServer(grpcServer, service.NewUserService(dbPostgres))
+	pb.RegisterTaskServiceServer(grpcServer, service.NewTaskService(dbPostgres, r))
 
 	// Starting the server
-	log.Printf("User service running on %s:%s", config.AppConfig.Http.Host, config.AppConfig.Http.Port)
+	log.Printf("Task service running on %s:%s", config.AppConfig.Http.Host, config.AppConfig.Http.Port)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}

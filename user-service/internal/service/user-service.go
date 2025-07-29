@@ -59,20 +59,21 @@ func (s *UserService) Register(ctx context.Context, req *userpb.RegisterUserReq)
 }
 
 func (s *UserService) Login(ctx context.Context, req *userpb.LoginUserReq) (*userpb.LoginUserRes, error) {
-	ip := "user:" + req.Email // yoki client IP bo‘lsa undan foydalaning
+	ipKey := "login_attempts:" + req.Username
 
-	attempts, err := s.rd.Client.Incr(ctx, ip).Result()
+	attempts, err := s.rd.Incr(ctx, ipKey).Result()
 	if err != nil {
 		return nil, status.Error(codes.Internal, "redis error")
 	}
 
 	if attempts == 1 {
-		s.rd.client.Expire(ctx, ip, 1*time.Minute) // 1 daqiqalik oynani o‘rnatish
+		s.rd.Expire(ctx, ipKey, time.Minute)
 	}
 
 	if attempts > 5 {
 		return nil, status.Error(codes.ResourceExhausted, "Too many login attempts. Try again later.")
 	}
+
 	userID, err := s.storage.LoginSql(ctx, req)
 	if err != nil {
 		return nil, err
@@ -83,9 +84,7 @@ func (s *UserService) Login(ctx context.Context, req *userpb.LoginUserReq) (*use
 		return nil, err
 	}
 
-	return &userpb.LoginUserRes{
-		Token: gentoken,
-	}, nil
+	return &userpb.LoginUserRes{Token: gentoken}, nil
 }
 
 func (s *UserService) UpdateUserName(ctx context.Context, req *userpb.UpdateUserNameReq) (*userpb.UpdateRes, error) {
@@ -101,7 +100,7 @@ func (s *UserService) UpdateUserName(ctx context.Context, req *userpb.UpdateUser
 	if err != nil {
 		return &userpb.UpdateRes{Message: "failed update"}, err
 	}
-
+	s.rd.Del(ctx, "user:"+userID)
 	return &userpb.UpdateRes{Message: "update user name successful"}, nil
 }
 
@@ -136,7 +135,7 @@ func (s *UserService) UpdateEmail(ctx context.Context, req *userpb.UpdateEmailRe
 	if err != nil {
 		return &userpb.UpdateRes{Message: "error in storage"}, err
 	}
-
+	s.rd.Del(ctx, "user:"+userID)
 	return &userpb.UpdateRes{Message: "update email successful"}, nil
 }
 
@@ -148,7 +147,6 @@ func (s *UserService) GetProfile(ctx context.Context, req *userpb.GetProfileReq)
 
 	// 1. Redis'dan tekshiramiz (cache bor yoki yo‘q)
 	cached, err := s.rd.Get(ctx, "user:"+userID).Result()
-	fmt.Println(cached)
 	if err == nil {
 		// Agar Redis'da bor bo‘lsa — JSON dan struct'ga parse qilib yuboramiz
 		var cachedUser userpb.GetProfileRes

@@ -3,7 +3,7 @@ package redis
 import (
 	"context"
 	"log"
-	"user-service/config"
+	"task-service/config"
 
 	"github.com/go-redis/redis/v8"
 )
