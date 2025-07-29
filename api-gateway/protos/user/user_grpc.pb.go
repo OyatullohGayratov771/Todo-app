@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v3.21.12
-// source: protos/user/user.proto
+// source: user.proto
 
-package userpb
+package __
 
 import (
 	context "context"
@@ -24,6 +24,7 @@ const (
 	UserService_UpdateUserName_FullMethodName = "/UserService/UpdateUserName"
 	UserService_UpdatePassword_FullMethodName = "/UserService/UpdatePassword"
 	UserService_UpdateEmail_FullMethodName    = "/UserService/UpdateEmail"
+	UserService_GetProfile_FullMethodName     = "/UserService/GetProfile"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -35,6 +36,7 @@ type UserServiceClient interface {
 	UpdateUserName(ctx context.Context, in *UpdateUserNameReq, opts ...grpc.CallOption) (*UpdateRes, error)
 	UpdatePassword(ctx context.Context, in *UpdatePasswordReq, opts ...grpc.CallOption) (*UpdateRes, error)
 	UpdateEmail(ctx context.Context, in *UpdateEmailReq, opts ...grpc.CallOption) (*UpdateRes, error)
+	GetProfile(ctx context.Context, in *GetProfileReq, opts ...grpc.CallOption) (*GetProfileRes, error)
 }
 
 type userServiceClient struct {
@@ -95,6 +97,16 @@ func (c *userServiceClient) UpdateEmail(ctx context.Context, in *UpdateEmailReq,
 	return out, nil
 }
 
+func (c *userServiceClient) GetProfile(ctx context.Context, in *GetProfileReq, opts ...grpc.CallOption) (*GetProfileRes, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetProfileRes)
+	err := c.cc.Invoke(ctx, UserService_GetProfile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -104,6 +116,7 @@ type UserServiceServer interface {
 	UpdateUserName(context.Context, *UpdateUserNameReq) (*UpdateRes, error)
 	UpdatePassword(context.Context, *UpdatePasswordReq) (*UpdateRes, error)
 	UpdateEmail(context.Context, *UpdateEmailReq) (*UpdateRes, error)
+	GetProfile(context.Context, *GetProfileReq) (*GetProfileRes, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -128,6 +141,9 @@ func (UnimplementedUserServiceServer) UpdatePassword(context.Context, *UpdatePas
 }
 func (UnimplementedUserServiceServer) UpdateEmail(context.Context, *UpdateEmailReq) (*UpdateRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateEmail not implemented")
+}
+func (UnimplementedUserServiceServer) GetProfile(context.Context, *GetProfileReq) (*GetProfileRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProfile not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -240,6 +256,24 @@ func _UserService_UpdateEmail_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_GetProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProfileReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetProfile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetProfile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetProfile(ctx, req.(*GetProfileReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -267,7 +301,11 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "UpdateEmail",
 			Handler:    _UserService_UpdateEmail_Handler,
 		},
+		{
+			MethodName: "GetProfile",
+			Handler:    _UserService_GetProfile_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "protos/user/user.proto",
+	Metadata: "user.proto",
 }

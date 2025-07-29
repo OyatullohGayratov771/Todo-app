@@ -3,22 +3,26 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"time"
 	"user-service/internal/storage"
 	"user-service/internal/utils"
 	userpb "user-service/protos/user"
 
+	"github.com/go-redis/redis/v8"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type UserService struct {
 	storage storage.Storage
+	rd      *redis.Client
 	userpb.UnimplementedUserServiceServer
 }
 
-func NewUserService(s *storage.PostgresStorage) *UserService {
-	return &UserService{storage: s}
+func NewUserService(s *storage.PostgresStorage, rd *redis.Client) *UserService {
+	return &UserService{storage: s, rd: rd}
 }
 
 func (s *UserService) Register(ctx context.Context, req *userpb.RegisterUserReq) (*userpb.RegisterUserRes, error) {
@@ -55,6 +59,20 @@ func (s *UserService) Register(ctx context.Context, req *userpb.RegisterUserReq)
 }
 
 func (s *UserService) Login(ctx context.Context, req *userpb.LoginUserReq) (*userpb.LoginUserRes, error) {
+	ip := "user:" + req.Email // yoki client IP bo‘lsa undan foydalaning
+
+	attempts, err := s.rd.Client.Incr(ctx, ip).Result()
+	if err != nil {
+		return nil, status.Error(codes.Internal, "redis error")
+	}
+
+	if attempts == 1 {
+		s.rd.client.Expire(ctx, ip, 1*time.Minute) // 1 daqiqalik oynani o‘rnatish
+	}
+
+	if attempts > 5 {
+		return nil, status.Error(codes.ResourceExhausted, "Too many login attempts. Try again later.")
+	}
 	userID, err := s.storage.LoginSql(ctx, req)
 	if err != nil {
 		return nil, err
@@ -120,4 +138,41 @@ func (s *UserService) UpdateEmail(ctx context.Context, req *userpb.UpdateEmailRe
 	}
 
 	return &userpb.UpdateRes{Message: "update email successful"}, nil
+}
+
+func (s *UserService) GetProfile(ctx context.Context, req *userpb.GetProfileReq) (*userpb.GetProfileRes, error) {
+	userID, ok := ctx.Value("userID").(string)
+	if !ok {
+		return nil, status.Errorf(codes.Unauthenticated, "user not authenticated")
+	}
+
+	// 1. Redis'dan tekshiramiz (cache bor yoki yo‘q)
+	cached, err := s.rd.Get(ctx, "user:"+userID).Result()
+	fmt.Println(cached)
+	if err == nil {
+		// Agar Redis'da bor bo‘lsa — JSON dan struct'ga parse qilib yuboramiz
+		var cachedUser userpb.GetProfileRes
+
+		json.Unmarshal([]byte(cached), &cachedUser)
+
+		return &userpb.GetProfileRes{
+			Username: cachedUser.Username,
+			Email:    cachedUser.Email,
+		}, nil
+	}
+
+	// 2. Redis'da topilmadi → PostgreSQL'dan olib kelamiz
+	user, err := s.storage.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get user: %v", err)
+	}
+
+	// 3. Redis'ga saqlab qo‘yamiz (cache qilish)
+	data, _ := json.Marshal(user)
+	s.rd.Set(ctx, "user:"+userID, data, time.Minute*10)
+
+	return &userpb.GetProfileRes{
+		Username: user.Username,
+		Email:    user.Email,
+	}, nil
 }

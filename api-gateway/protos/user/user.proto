@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "./userpb";
+option go_package = ".";
 
 service UserService {
   rpc Register(RegisterUserReq) returns (RegisterUserRes);
@@ -8,6 +8,14 @@ service UserService {
   rpc UpdateUserName(UpdateUserNameReq) returns (UpdateRes);
   rpc UpdatePassword(UpdatePasswordReq) returns (UpdateRes);
   rpc UpdateEmail(UpdateEmailReq) returns (UpdateRes);
+  rpc GetProfile(GetProfileReq) returns (GetProfileRes);
+}
+
+message GetProfileReq {}
+
+message GetProfileRes {
+  string username = 1;
+  string email = 2;
 }
 
 message RegisterUserReq {

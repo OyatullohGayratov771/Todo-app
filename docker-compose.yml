@@ -1,16 +1,16 @@
 services:
-  api-gateway:
-    build: ./api-gateway
-    ports:
-      - "8080:8080"
-    depends_on:
-      - user-service
-      - task-service
-    networks:
-      - app-net
-    environment:
-      - USER_SERVICE_URL=http://user-service:5000
-      - TASK_SERVICE_URL=http://task-service:5001
+  # api-gateway:
+  #   build: ./api-gateway
+  #   ports:
+  #     - "8080:8080"
+  #   depends_on:
+  #     - user-service
+  #     - task-service
+  #   networks:
+  #     - app-net
+  #   environment:
+  #     - USER_SERVICE_URL=http://user-service:8081
+  #     - TASK_SERVICE_URL=http://task-service:8082
 
   user-service:
     build: ./user-service
@@ -19,40 +19,49 @@ services:
     networks:
       - app-net
     depends_on:
+      - redis
       - db
     env_file: 
     - ./user-service/.env
 
 
-  task-service:
-    build: ./task-service
-    ports:
-      - "5001:5001"
-    networks:
-      - app-net
-    depends_on:
-      - db
-    env_file: 
-    - ./task-service/.env
+  # task-service:
+  #   build: ./task-service
+  #   ports:
+  #     - "8082:8082"
+  #   networks:
+  #     - app-net
+  #   depends_on:
+  #     - db
+  #   env_file: 
+  #   - ./task-service/.env
 
 
-  frontend:
-    build: ./frontend
-    ports:
-      - "3000:80"
-    networks:
-      - app-net
+  # frontend:
+  #   build: ./frontend
+  #   ports:
+  #     - "3000:80"
+  #   networks:
+  #     - app-net
 
   db:
     image: postgres:14
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 0101
+      POSTGRES_PASSWORD: secret
       POSTGRES_DB: todo_app
     ports:
       - "5433:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
+    networks:
+      - app-net
+
+  redis:
+    image: redis:8
+    container_name: redis
+    ports:
+      - "6379:6379"
     networks:
       - app-net
 

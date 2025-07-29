@@ -6,6 +6,7 @@ import (
 	"net"
 	"user-service/config"
 	"user-service/internal/service"
+	"user-service/internal/redis"
 	"user-service/internal/utils"
 
 	db "user-service/internal/storage"
@@ -31,6 +32,7 @@ func main() {
 
 	// Launching the Storage Layer
 	dbPostgres := db.NewPostgresStorage(dbConn)
+	redis := redis.NewRedisClient(config.AppConfig)
 
 	// Opening a TCP listener for the gRPC server
 	lis, err := net.Listen("tcp", config.AppConfig.Http.Host+":"+config.AppConfig.Http.Port)
@@ -45,7 +47,7 @@ func main() {
 	reflection.Register(grpcServer)
 
 	// Registering a UserService server
-	pb.RegisterUserServiceServer(grpcServer, service.NewUserService(dbPostgres))
+	pb.RegisterUserServiceServer(grpcServer, service.NewUserService(dbPostgres,redis))
 
 	// Starting the server
 	log.Printf("User service running on %s:%s", config.AppConfig.Http.Host, config.AppConfig.Http.Port)

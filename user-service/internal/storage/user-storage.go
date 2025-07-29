@@ -17,6 +17,7 @@ type Storage interface {
 	UpdateUserName(ctx context.Context, userID, newUserName string) error
 	UpdatePassword(ctx context.Context, userID, oldPassword, newPassword string) error
 	UpdateEmail(ctx context.Context, userID, newEmail string) error
+	GetUserByID(ctx context.Context, userID string) (*userpb.GetProfileRes, error)
 }
 
 type PostgresStorage struct {
@@ -108,4 +109,13 @@ func (s *PostgresStorage) UpdateEmail(ctx context.Context, userID, newEmail stri
 
 	_, err = s.db.Exec("UPDATE users SET email = $1 WHERE id = $2", newEmail, userID)
 	return err
+}
+
+func (s *PostgresStorage) GetUserByID(ctx context.Context, userID string) (*userpb.GetProfileRes, error) {
+	var user userpb.GetProfileRes
+	err := s.db.QueryRow("SELECT username, email FROM users WHERE id = $1", userID).Scan(&user.Username, &user.Email)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
