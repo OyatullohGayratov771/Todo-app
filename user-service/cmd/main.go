@@ -5,8 +5,9 @@ import (
 	"log"
 	"net"
 	"user-service/config"
-	"user-service/internal/service"
+	"user-service/internal/kafka"
 	"user-service/internal/redis"
+	"user-service/internal/service"
 	"user-service/internal/utils"
 
 	db "user-service/internal/storage"
@@ -33,7 +34,10 @@ func main() {
 	// Launching the Storage Layer
 	dbPostgres := db.NewPostgresStorage(dbConn)
 	redis := redis.NewRedisClient(config.AppConfig)
-
+	kafka, err := kafka.NewProducer([]string{config.AppConfig.Kafka.Host + ":" + config.AppConfig.Kafka.Port})
+	if err != nil {
+		log.Fatalf("Kafka producer yaratishda xatolik: %v", err)
+	}
 	// Opening a TCP listener for the gRPC server
 	lis, err := net.Listen("tcp", config.AppConfig.Http.Host+":"+config.AppConfig.Http.Port)
 	if err != nil {
@@ -47,7 +51,7 @@ func main() {
 	reflection.Register(grpcServer)
 
 	// Registering a UserService server
-	pb.RegisterUserServiceServer(grpcServer, service.NewUserService(dbPostgres,redis))
+	pb.RegisterUserServiceServer(grpcServer, service.NewUserService(dbPostgres, redis, kafka))
 
 	// Starting the server
 	log.Printf("User service running on %s:%s", config.AppConfig.Http.Host, config.AppConfig.Http.Port)

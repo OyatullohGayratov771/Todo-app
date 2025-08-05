@@ -1,12 +1,13 @@
 syntax = "proto3";
 
-option go_package = "./notifactionpb" ;
+option go_package = "." ;
 
 service NotificationService {
     rpc SendNotification (NotificationReq) returns (NotifactionRes);
 }
 
 message NotifactionRes{
+    string message = 1;
 }
 
 message NotificationReq {

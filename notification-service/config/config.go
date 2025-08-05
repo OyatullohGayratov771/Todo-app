@@ -13,26 +13,12 @@ type Config struct {
 		Port string
 	}
 
-	Database struct {
-		Host     string
-		Port     string
-		User     string
-		Password string
-		Name     string
-	}
-
-	Redis struct {
-		Host string
-		Port string
-	}
-
 	Kafka struct {
 		Host  string
 		Port  string
 		Group string
 		Topic string
 	}
-
 }
 
 var AppConfig Config
@@ -54,29 +40,9 @@ func LoadConfig() {
 			Host: os.Getenv("HTTP_HOST"),
 			Port: os.Getenv("HTTP_PORT"),
 		},
-		Database: struct {
-			Host     string
-			Port     string
-			User     string
-			Password string
-			Name     string
-		}{
-			Host:     os.Getenv("DB_HOST"),
-			Port:     os.Getenv("DB_PORT"),
-			User:     os.Getenv("DB_USER"),
-			Password: os.Getenv("DB_PASSWORD"),
-			Name:     os.Getenv("DB_NAME"),
-		},
-		Redis: struct{
-			Host string;
-			 Port string
-		}{
-			Host: os.Getenv("REDIS_HOST"),
-			Port: os.Getenv("REDIS_PORT"),
-		},
 		Kafka: struct {
-			Host  string
-			Port  string
+			Host string
+			Port string
 			Group string
 			Topic string
 		}{
@@ -86,5 +52,6 @@ func LoadConfig() {
 			Topic: os.Getenv("KAFKA_TOPIC"),
 		},
 	}
+
 	log.Printf("Loaded config: %+v\n", AppConfig)
 }

@@ -1,5 +1,4 @@
-# Dockerfile (Go servislar uchun)
-FROM golang:1.20-alpine
+FROM golang:1.24-alpine
 
 WORKDIR /app
 
@@ -9,6 +8,7 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o main
+# Build from the main.go entrypoint
+RUN go build -o main ./cmd
 
-CMD ["./cmd/main"]
+CMD ["./main"]

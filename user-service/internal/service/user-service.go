@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+	"user-service/internal/kafka"
 	"user-service/internal/storage"
 	"user-service/internal/utils"
 	userpb "user-service/protos/user"
@@ -18,11 +19,12 @@ import (
 type UserService struct {
 	storage storage.Storage
 	rd      *redis.Client
+	kf      *kafka.Producer
 	userpb.UnimplementedUserServiceServer
 }
 
-func NewUserService(s *storage.PostgresStorage, rd *redis.Client) *UserService {
-	return &UserService{storage: s, rd: rd}
+func NewUserService(s *storage.PostgresStorage, rd *redis.Client, kf *kafka.Producer) *UserService {
+	return &UserService{storage: s, rd: rd, kf: kf}
 }
 
 func (s *UserService) Register(ctx context.Context, req *userpb.RegisterUserReq) (*userpb.RegisterUserRes, error) {
@@ -52,6 +54,14 @@ func (s *UserService) Register(ctx context.Context, req *userpb.RegisterUserReq)
 		return nil, status.Errorf(codes.Internal, "failed to generate token: %v", err)
 	}
 
+	event := map[string]string{
+		"subject":   "user_registered",
+		"userEmail": req.Email,
+		"message":   "Welcome " + req.Username + "! Your registration is successful.",
+	}
+	data, _ := json.Marshal(event)
+	s.kf.Publish(data)
+
 	return &userpb.RegisterUserRes{
 		Message: "registration successful",
 		Token:   t,
@@ -74,7 +84,7 @@ func (s *UserService) Login(ctx context.Context, req *userpb.LoginUserReq) (*use
 		return nil, status.Error(codes.ResourceExhausted, "Too many login attempts. Try again later.")
 	}
 
-	userID, err := s.storage.LoginSql(ctx, req)
+	userID, email, err := s.storage.LoginSql(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -83,6 +93,14 @@ func (s *UserService) Login(ctx context.Context, req *userpb.LoginUserReq) (*use
 	if err != nil {
 		return nil, err
 	}
+
+	event := map[string]string{
+		"subject":   "user_logged_in",
+		"userEmail": email,
+		"message":   "User successfully logged in!",
+	}
+	data, _ := json.Marshal(event)
+	s.kf.Publish(data)
 
 	return &userpb.LoginUserRes{Token: gentoken}, nil
 }

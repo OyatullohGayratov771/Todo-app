@@ -13,7 +13,7 @@ import (
 
 type Storage interface {
 	InsertUser(ctx context.Context, req *userpb.RegisterUserReq) (int, error)
-	LoginSql(ctx context.Context, req *userpb.LoginUserReq) (int, error)
+	LoginSql(ctx context.Context, req *userpb.LoginUserReq) (int,string, error)
 	UpdateUserName(ctx context.Context, userID, newUserName string) error
 	UpdatePassword(ctx context.Context, userID, oldPassword, newPassword string) error
 	UpdateEmail(ctx context.Context, userID, newEmail string) error
@@ -44,21 +44,22 @@ func (s *PostgresStorage) InsertUser(ctx context.Context, req *userpb.RegisterUs
 	return userID, nil
 }
 
-func (s *PostgresStorage) LoginSql(ctx context.Context, req *userpb.LoginUserReq) (int, error) {
+func (s *PostgresStorage) LoginSql(ctx context.Context, req *userpb.LoginUserReq) (int, string, error) {
 	var storedPassword string
 	var userID int
+	var email string
 
-	err := s.db.QueryRowContext(ctx, "SELECT password,id FROM users WHERE username = $1", req.Username).
-		Scan(&storedPassword, &userID)
+	err := s.db.QueryRowContext(ctx, "SELECT password,id,email FROM users WHERE username = $1", req.Username).
+		Scan(&storedPassword, &userID, &email)
 	if err != nil {
-		return 0, status.Error(codes.NotFound, "user not found")
+		return 0, "", status.Error(codes.NotFound, "user not found")
 	}
 
 	if !utils.CheckPasswordHash(req.Password, storedPassword) {
-		return 0, status.Error(codes.Unauthenticated, "invalid password")
+		return 0, "", status.Error(codes.Unauthenticated, "invalid password")
 	}
 
-	return userID, nil
+	return userID, email, nil
 }
 
 func (s *PostgresStorage) UpdateUserName(ctx context.Context, userID, newUserName string) error {
