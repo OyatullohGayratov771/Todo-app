@@ -1,17 +1,17 @@
 services:
-  # api-gateway:
-  #   build: ./api-gateway
-  #   container_name: api-gateway
-  #   ports:
-  #     - "8080:8080"
-  #   depends_on:
-  #     - user-service
-  #     - task-service
-  #   networks:
-  #     - app-net
-  #   environment:
-  #     - USER_SERVICE_URL=http://user-service:8081
-  #     - TASK_SERVICE_URL=http://task-service:8082
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - user-service
+      - task-service
+    networks:
+      - app-net
+    environment:
+      - USER_SERVICE_URL=http://user-service:8081
+      - TASK_SERVICE_URL=http://task-service:8082
 
   user-service:
     build: ./user-service
@@ -30,22 +30,22 @@ services:
     env_file: 
       - ./user-service/.env
 
-  # task-service:
-  #   build: ./task-service
-  #   container_name: task-service
-  #   ports:
-  #     - "8082:8082"
-  #   networks:
-  #     - app-net
-  #   depends_on:
-  #     redis:
-  #       condition: service_healthy
-  #     db:
-  #       condition: service_healthy
-  #     kafka:
-  #       condition: service_healthy
-  #   env_file: 
-  #     - ./task-service/.env
+  task-service:
+    build: ./task-service
+    container_name: task-service
+    ports:
+      - "8082:8082"
+    networks:
+      - app-net
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    env_file: 
+      - ./task-service/.env
 
   notification-service:
     build: ./notification-service
@@ -60,13 +60,13 @@ services:
     env_file: 
       - ./notification-service/.env
 
-  # frontend:
-  #   build: ./frontend
-  #   container_name: frontend
-  #   ports:
-  #     - "3000:80"
-  #   networks:
-  #     - app-net
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "3000:80"
+    networks:
+      - app-net
 
   db:
     image: postgres:14
@@ -107,8 +107,6 @@ services:
       - "2181:2181"
     networks:
       - app-net
-    volumes:
-      - ./zookeeper-config/log4j.properties:/opt/bitnami/zookeeper/conf/log4j.properties
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "2181"]
       interval: 5s
