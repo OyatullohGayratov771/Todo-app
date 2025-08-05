@@ -79,6 +79,7 @@ services:
       - "5433:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
     networks:
       - app-net
     healthcheck:
